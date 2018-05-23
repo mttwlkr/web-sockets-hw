@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+    </style>
+  </head>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <script>
+    $(() => {
+      const socket = io();
+
+      socket.on('connect', () => {
+        socket.emit(`new user`, `User ${socket.id} joined!`)
+        socket.emit(`append user`, socket.id)
+      })
+      socket.on(`new user`, (user) => {
+        $('#messages').append($('<li>').text(user));
+      })
+
+      socket.on('append user', (user) => {
+        $('#currently-online').append($('<li>').text(`${socket.nickname || user},`))
+      })
+
+      $('#add-nickname-btn').on('click', () => {
+        socket.emit('add nickname', $('#add-nickname-input').val())
+      })
+      socket.on('add nickname', (nickname) => {
+        socket.nickname = nickname;
+      })
+
+      $('form').submit(() => {
+        socket.emit('chat message', $('#m').val());
+        $('#m').val('');
+        return false;
+      });
+      socket.on('chat message', (msg) => {
+        $('#messages').append($('<li>').text(`${socket.nickname || socket.id}:  ${msg}`));
+      });
+
+      socket.on('user disconnect', () => {
+        $('#messages').append($('<li>').text(`${socket.nickname || socket.id} left the room`));
+      })
+    });
+  </script>
+  <body>
+    <input id="add-nickname-input" type="text">
+    <button id="add-nickname-btn">Add Nickname</button>
+    <ul id="currently-online">Currently Online:</ul>
+    <ul id="messages"></ul>
+    <form>
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+  </body>
+</html>
+
+<!-- socket.on('connect', function() {
+        var userID = Date.now();
+        socket.emit(`new user`, `User ${userID} joined!`);
+        socket.emit(`append user`, userID)
+      });
+
+      socket.on('append user', function(user) {
+        $('#currently-online').append($('<li>').text(user + ", "))
+      })
+
+      socket.on('new user', function(msg) {
+        $('#messages').append($('<li>').text(msg));
+      })
+
+      $('form').submit(function(){
+        socket.emit('chat message', $('#m').val());
+        $('#m').val('');
+        return false;
+      });
+
+      socket.on('chat message', function(msg, name){
+        $('#messages').append($('<li>').text(msg));
+      }); -->
